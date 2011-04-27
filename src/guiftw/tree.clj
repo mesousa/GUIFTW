@@ -52,7 +52,7 @@
   (apply merge
 	 {:ids (merge (:ids old) (:ids new))
 	  :groups (merge-with concat (:groups old) (:groups new))
-	  :root (:root new)}
+	  :root (or (:root new) (:root old))}
 	 (map #(dissoc % :ids :groups :root) [old new]))) ;; merge rest of map traditionally
 
 (defn gui-creator
