@@ -5,8 +5,8 @@
   (:import (org.eclipse.swt SWT)
            (org.eclipse.swt.widgets Display MessageBox)))
 
-(defn swt-create [ctor parent style]
-  (apply ctor parent (-> style props/get-value :specials :*cons)))
+(defn swt-create [ctor parent parent-style child-style]
+  (apply ctor parent (-> child-style props/get-value :specials :*cons)))
 
 (defmacro swt [struct]
   `(tree/parse-gui swt-create ~struct))

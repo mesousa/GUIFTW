@@ -59,23 +59,24 @@
   "Logic behind creating GUI. It's what parse-gui will return and it's
   not intended to be used outside of it.
 
-  Instantiator have to be 3-arg fn that will construct object using
-  constructor and add it to a parent using evetually properties of an
-  object (especially *cons -- constructor parameters -- and *lay --
+  Instantiator have to be 4-arg fn that will construct object using
+  constructor and add it to a parent using evetually properties of parent
+  and an object (especially *cons -- constructor parameters -- and *lay --
   layout parameters)."
   [instantiator constructor style children]
-  (fn [& [gui & stylesheets]]
+  (fn [& [gui parent-style & stylesheets]]
     {:pre [(or (nil? gui)
 	       (instance? clojure.lang.IDeref gui))]}
     (let [gui (or gui (atom {}))
+	  parent-style (or parent-style (styles/style []))
 	  specials (-> style props/get-value :specials)
 	  final-style (if-let [reduced (styles/reduce-stylesheet
 					(cons (:*id specials) (:*groups specials))
 					(apply concat stylesheets))]
 			(styles/cascade reduced style)
 			style)
-	  parent (:root @gui)
-	  obj (instantiator constructor parent final-style)]
+	  parent (->> @gui :root)
+	  obj (instantiator constructor parent parent-style final-style)]
       (props/set-on final-style gui obj)
       (let [id (if-let [id (:*id specials)]
 		 {:ids {id obj}})
@@ -84,7 +85,7 @@
 	    root {:root obj}
 	    gui-news (merge id groups root)]
 	(swap! gui merge-guis gui-news)
-	(dorun (map #(apply % gui stylesheets) children))
+	(dorun (map #(apply % gui final-style stylesheets) children))
 	(swap! gui assoc :root parent))
       gui)))
 
@@ -93,10 +94,10 @@
   possible, given instantiator function is concrete implementation of
   creating object and adding it as an child to it's parent.
 
-  Instantiator function takes three arguments: a constructor
+  Instantiator function takes four arguments: a constructor
   function (generated multi-variant fn that represents all possible
   constructors for class at in this node), parent object (nil is
-  possible) and style for object that will be created.
+  possible), its style and style for object that will be created.
 
   Returns a function that takes zero or more arguments: gui state and
   any amount of style sheets that will be applied to created

@@ -7,15 +7,25 @@
 (defn swing-create
   "Function that instantiates object in Swing-specific manner. Calls
   ctor using optionally :*cons from style as parameters to create
-  object. Then calls parent.add(object) or parent.add(object,
+  object. Then, if :*adder from parent style is not nil, calls it with
+  (parent, parent-style, child, child-style.) Otherwise uses default
+  adder, which calls parent.add(object) or parent.add(object,
   layout_constraints) if :*lay is present in style. Parent can be nil
   and then no adding happens. Returns created object."
-  [ctor parent style]
-  (let [specials (-> style props/get-value :specials)
+  [ctor parent parent-style child-style]
+  (let [specials (-> child-style props/get-value :specials)
 	obj (apply ctor (:*cons specials))
-	layout-data (:*lay specials)]
-    (cond (and parent layout-data) (.add parent obj layout-data)
-	  parent (.add parent obj))
+	default-adder (fn [parent parent-style child child-style]
+			(let [layout-data (-> child-style props/get-value :specials :*lay)]
+			  (if layout-data (.add parent child layout-data)
+			      (.add parent child))))
+	adder (or (-> parent-style
+		      props/get-value
+		      :specials
+		      :*adder)
+		  default-adder)]
+    (if parent
+      (adder parent parent-style obj child-style))
     obj))
 
 (defmacro swing
