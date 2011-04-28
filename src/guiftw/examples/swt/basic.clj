@@ -43,7 +43,7 @@
 			     (fn [gui event]
 			       ;; message is convenient function in
 			       ;; guiftw.swt
-			       (message "Masssage"
+			       (message "Message"
 					(reduce str "Big Brother is watching you!\nEvent: "
 							   (take 50 (str event)))))]))
 
@@ -68,14 +68,14 @@
 
 ;; To open a window in REPL you could write:
 ;; (swt-thread)
-;; (async-exec #(.open (gui (default-display) sheet)))
+;; (async-exec #(.open (:root @(gui :gui (default-display) :stylesheets[sheet])))
 
 (defn start-in-repl [] ;; remember to (swt-thread) first!
-  (async-exec #(.open (:root @(gui (default-display) sheet)))))
+  (async-exec #(.open (:root @(gui :gui (default-display) :stylesheets [sheet])))))
 
 
 (defn -main [& args]
-  (let [shell (gui (default-display) sheet)]
+  (let [shell (gui :gui (default-display) :sytlesheets [sheet])]
     (.open shell) ;; Is there another way to show a shell?
     (swt-loop shell))) ;; Start SWT main loop that will stop program
 		       ;; after shell is closed.

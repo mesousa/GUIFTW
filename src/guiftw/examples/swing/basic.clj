@@ -19,9 +19,13 @@
 ;; Let's define our GUI structure.
 (def gui
      ;; swing macro will return a function that creates
-     ;; GUI. Parameters to this function will be parent object
-     ;; (usually nil for main window) followed by any number of style
-     ;; sheets.
+     ;; GUI. Keyword parameters to this function will be:
+     ;; :gui - gui to be modified, usually not needed for main window
+     ;; :parent - parent object, usually not needed for main window
+     ;; :parent-style - guiftw.styles.Style, containing parent object
+     ;;   properties, usually not needed.
+     ;; :stylesheets - sequence of guiftw.styles.Style objects with
+     ;;   styles to be applied
      (swing
       ;; GUI structure is a tree. Each node begins with object's class
       ;; name, followed by private style sheet and children. In this
@@ -106,4 +110,4 @@
 ;; sheets.
 (defn -main [& args]
   (set-laf "Nimbus")
-  (gui nil sheet sheet2))
+  (gui :stylesheets [sheet sheet2]))
