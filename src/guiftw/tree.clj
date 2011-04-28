@@ -52,7 +52,7 @@
   (apply merge
 	 {:ids (merge (:ids old) (:ids new))
 	  :groups (merge-with concat (:groups old) (:groups new))
-	  :root (or (:root new) (:root old))}
+	  :root (or (:root old) (:root new))}
 	 (map #(dissoc % :ids :groups :root) [old new]))) ;; merge rest of map traditionally
 
 (defn gui-creator
@@ -64,18 +64,17 @@
   and an object (especially *cons -- constructor parameters -- and *lay --
   layout parameters)."
   [instantiator constructor style children]
-  (fn [& [gui parent-style & stylesheets]]
-    {:pre [(or (nil? gui)
-	       (instance? clojure.lang.IDeref gui))]}
-    (let [gui (or gui (atom {}))
-	  parent-style (or parent-style (styles/style []))
+  (fn [& {:keys [stylesheets gui parent parent-style]
+	  :or {stylesheets [],
+	       gui (atom {}),
+	       parent-style (styles/style [])}}]
+    (let [parent (or parent (:root @gui))
 	  specials (-> style props/get-value :specials)
 	  final-style (if-let [reduced (styles/reduce-stylesheet
 					(cons (:*id specials) (:*groups specials))
-					(apply concat stylesheets))]
+					stylesheets)]
 			(styles/cascade reduced style)
 			style)
-	  parent (->> @gui :root)
 	  obj (instantiator constructor parent parent-style final-style)]
       (props/set-on final-style gui obj)
       (let [id (if-let [id (:*id specials)]
@@ -85,8 +84,10 @@
 	    root {:root obj}
 	    gui-news (merge id groups root)]
 	(swap! gui merge-guis gui-news)
-	(dorun (map #(apply % gui final-style stylesheets) children))
-	(swap! gui assoc :root parent))
+	(dorun (map #(% :gui gui,
+			:parent obj,
+			:stylesheets stylesheets,
+			:parent-style final-style) children)))
       gui)))
 
 (defmacro parse-gui
@@ -99,12 +100,14 @@
   constructors for class at in this node), parent object (nil is
   possible), its style and style for object that will be created.
 
-  Returns a function that takes zero or more arguments: gui state and
-  any amount of style sheets that will be applied to created
-  objects. Created function will return modified gui state or newly
-  created if gui arg is nil. If you pass a map wrapped in an atom with
-  some custom keys (:ids, :groups and :root are reserved) they will be
-  preserved so you can put there your custom application state.
+  Returns a function that takes zero or more arguments: gui state,
+  parent object (place where widgets will be added) and any amount of
+  style sheets that will be applied to created objects. All parameters
+  are optional. Created function will return modified gui state or
+  newly created if gui arg is nil. If you pass a map wrapped in an
+  atom with some custom keys (:ids, :groups and :root are reserved)
+  they will be preserved so you can put there your custom application
+  state.
 
   Use any of concrete implementations like guiftw.swing/swing or
   guiftw.swt/swt instead of this."
