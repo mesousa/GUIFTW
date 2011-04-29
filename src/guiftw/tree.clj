@@ -69,10 +69,11 @@
 	       gui (atom {}),
 	       parent-style (styles/style [])}}]
     (let [parent (or parent (:root @gui))
+	  stylesheet (reduce concat stylesheets)
 	  specials (-> style props/get-value :specials)
 	  final-style (if-let [reduced (styles/reduce-stylesheet
 					(cons (:*id specials) (:*groups specials))
-					stylesheets)]
+					stylesheet)]
 			(styles/cascade reduced style)
 			style)
 	  obj (instantiator constructor parent parent-style final-style)]
@@ -86,7 +87,7 @@
 	(swap! gui merge-guis gui-news)
 	(dorun (map #(% :gui gui,
 			:parent obj,
-			:stylesheets stylesheets,
+			:stylesheets [stylesheet],
 			:parent-style final-style) children)))
       gui)))
 
